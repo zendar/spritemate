@@ -5,10 +5,9 @@ export default class Save {
   savedata: any;
   app: any;
 
-  constructor(public window: number, public config, public eventhandler, app) {
+  constructor(public window: number, public config, app) {
     this.config = config;
     this.window = window;
-    this.eventhandler = eventhandler;
     this.app = app;
   }
 
@@ -181,7 +180,6 @@ S:::::::::::::::SS P::::::::P          D::::::::::::DDD
     const dialogElement = document.querySelector(`#dialog-window-${this.window}`) as HTMLDialogElement;
     if (dialogElement && dialogElement.open) {
       dialogElement.close();
-      this.eventhandler.onLoad(); // calls "regain_keyboard_controls" method in app.js
     }
   }
 }

@@ -36,9 +36,9 @@ export class Dialog {
   private resizeStartWidth = 0;
   private resizeStartHeight = 0;
 
-  // Static z-index counter for bringing windows to front
-  // Start at 100 to stay below modal dialogs (z-index: 1000)
-  private static nextZIndex = 100;
+  // Non-modal windows are renumbered from here on every bring-to-front,
+  // so z-index stays bounded and below the menubar
+  private static readonly BASE_Z_INDEX = 100;
 
   constructor(config: DialogConfig) {
     this.config = {
@@ -185,6 +185,12 @@ export class Dialog {
       }
     }
 
+    // Chrome can leave focus on a field inside a closed dialog, which would keep shortcuts off
+    this.dialog.addEventListener("close", () => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && this.dialog.contains(active)) active.blur();
+    });
+
     // ESC key to close
     if (this.config.closeOnEscape) {
       this.dialog.addEventListener("cancel", (e) => {
@@ -318,13 +324,17 @@ export class Dialog {
   }
 
   private bringToFront(): void {
-    // Only increment z-index for non-modal dialogs
-    // Modal dialogs use the browser's native modal z-index stacking
-    if (!this.config.modal) {
-      // Apply z-index to the dialog element itself, not the wrapper
-      // This is because each dialog is a separate stacking context
-      this.dialog.style.zIndex = String(Dialog.nextZIndex++);
-    }
+    // Modal dialogs live in the browser's top layer, nothing to do
+    if (this.config.modal) return;
+
+    // z-index goes on the dialog element, each one is its own stacking context
+    const others = Array.from(
+      document.querySelectorAll<HTMLDialogElement>("dialog.spritemate-dialog[open]:not(:modal)")
+    ).filter((d) => d !== this.dialog);
+    others.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
+    [...others, this.dialog].forEach((d, i) => {
+      d.style.zIndex = String(Dialog.BASE_Z_INDEX + i);
+    });
   }
 
   public open(): void {

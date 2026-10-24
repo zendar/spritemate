@@ -63,9 +63,9 @@ export class App {
   snapshot!: Snapshot;
   load: any;
   is_drawing!: boolean;
+  pointer_down = false;
   oldpos: any;
   mode: any;
-  allow_keyboard_shortcuts!: boolean;
   move_start: any;
   move_start_pos: any;
   dragging: any;
@@ -199,9 +199,7 @@ export class App {
       width: "680",
     });
     this.window_about = new Window(about_config);
-    this.about = new About(about_config.window_id, this.config, {
-      onLoad: this.regain_keyboard_controls.bind(this),
-    });
+    this.about = new About(about_config.window_id, this.config);
 
     // save
     const save_config = this.createWindowConfig("window_save", "Save", "file", 5, {
@@ -211,9 +209,7 @@ export class App {
       width: "580",
     });
     this.window_save = new Window(save_config);
-    this.save = new Save(save_config.window_id, this.config, {
-      onLoad: this.regain_keyboard_controls.bind(this),
-    }, this);
+    this.save = new Save(save_config.window_id, this.config, this);
 
     // export
     const export_config = this.createWindowConfig("window_export", "Export Spritesheet", "file", 7, {
@@ -223,14 +219,10 @@ export class App {
       width: "580",
     });
     this.window_export = new Window(export_config);
-    this.export = new Export(export_config.window_id, this.config, {
-      onLoad: this.regain_keyboard_controls.bind(this),
-    }, this);
+    this.export = new Export(export_config.window_id, this.config, this);
 
     // import
-    this.import = new Import(this.config, {
-      onLoad: this.regain_keyboard_controls.bind(this),
-    });
+    this.import = new Import(this.config);
 
     // import PNG
     this.importPNG = new ImportPNG(this.config, {
@@ -272,14 +264,8 @@ export class App {
       height: this.config.window_snapshot.height,
       window_id: 9,
     }
-    this.window_snapshot = new Window(
-      snapshot_config,
-      this.store_window.bind(this),
-      this.regain_keyboard_controls.bind(this) // onClose callback
-    );
-    this.snapshot = new Snapshot(snapshot_config.window_id, this.config, {
-      onLoad: this.regain_keyboard_controls.bind(this),
-    });
+    this.window_snapshot = new Window(snapshot_config, this.store_window.bind(this));
+    this.snapshot = new Snapshot(snapshot_config.window_id, this.config);
 
     // playfield
     const playfield_config = {
@@ -293,11 +279,7 @@ export class App {
       top: this.config.window_playfield.top,
       window_id: 12,
     };
-    this.window_playfield = new Window(
-      playfield_config,
-      this.store_window.bind(this),
-      this.regain_keyboard_controls.bind(this) // onClose callback
-    );
+    this.window_playfield = new Window(playfield_config, this.store_window.bind(this));
     this.playfield = new Playfield(playfield_config.window_id, this.config, this);
 
     this.load = new Load(this.config, {
@@ -334,7 +316,6 @@ export class App {
     }
 
     this.mode = "draw"; // modes can be "draw" and "fill"
-    this.allow_keyboard_shortcuts = true;
     this.selection = null;
     this.marquee_drawing = false;
     this.move_selection_backup = null;
@@ -573,7 +554,7 @@ export class App {
       this.update_ui();
       status("Sprite duplicated.");
     }
-    if (e.key === "Delete") {
+    if (e.key === "Delete" && isCtrl) {
       this.sprite.delete();
       this.list.update_all(this.sprite.get_all());
       this.update();
@@ -869,7 +850,6 @@ export class App {
     this.storage.write(this.config);
     this.list.update_all(this.sprite.get_all());
     this.update();
-    this.regain_keyboard_controls();
     status("Configuration updated.");
   }
 
@@ -957,16 +937,21 @@ export class App {
     }
   }
 
-  regain_keyboard_controls() {
-    // this will be called whenever keyboard controls have been deactivated, e.g. for input fields
-    // currently used as callback after the save dialog
-    this.allow_keyboard_shortcuts = true;
+  // Shortcuts are off while typing in a field or while a modal dialog is open
+  private isTypingContext(e: KeyboardEvent): boolean {
+    const target = e.target;
+    if (target instanceof HTMLElement) {
+      // a field left focused inside a closed dialog does not count
+      const dialog = target.closest("dialog");
+      const hidden = dialog instanceof HTMLDialogElement && !dialog.open;
+      if (!hidden && (target.matches("input, textarea, select") || target.isContentEditable)) return true;
+    }
+    return document.querySelector("dialog:modal") !== null;
   }
 
   update_sprite_name() {
     // checks the sprite name input box for the name
     // and updates the sprite name
-    this.allow_keyboard_shortcuts = true;
     let sprite_name: string = dom.val("#input-sprite-name") || "";
     sprite_name = sprite_name.replace(/[^A-Za-z0-9-_]+/g, ""); // allowed chars are characters, number, -, _
     this.sprite.set_sprite_name(sprite_name);
@@ -997,17 +982,9 @@ KKKKKKKKK    KKKKKKK   EEEEEEEEEEEEEEEEEEEEEE       YYYYYYYYYYYYY        SSSSSSS
 */
 
     document.addEventListener("keydown", (e) => {
-      if (!this.allow_keyboard_shortcuts) return;
+      if (this.isTypingContext(e)) return;
 
       const isCtrl = e.ctrlKey;
-
-      // Performance test (debug only)
-      if (e.key === "a") {
-        console.time("performance");
-        for (let i = 0; i <= 1000; i++) this.update();
-        console.timeEnd("performance");
-        return;
-      }
 
       // Handle different key categories
       this.handleNavigationKeys(e);
@@ -1045,12 +1022,10 @@ MMMMMMMM               MMMMMMMMEEEEEEEEEEEEEEEEEEEEEENNNNNNNN         NNNNNNN   
 */
 
     dom.sel("#menubar-info").onclick = () => {
-      this.allow_keyboard_shortcuts = false;
       this.window_about.open();
     };
 
     dom.sel("#menubar-settings").onclick = () => {
-      this.allow_keyboard_shortcuts = false;
       this.window_settings.open();
     };
 
@@ -1089,7 +1064,6 @@ MMMMMMMM               MMMMMMMMEEEEEEEEEEEEEEEEEEEEEENNNNNNNN         NNNNNNN   
     const exportSpritesheetBtn = dom.sel("#menubar-export-spritesheet");
     if (exportSpritesheetBtn) {
       exportSpritesheetBtn.onclick = () => {
-        this.allow_keyboard_shortcuts = false;
         this.window_export.open();
         this.syncPlayfieldToSpriteData();
         this.export.set_save_data(this.sprite.get_all());
@@ -1486,18 +1460,6 @@ EEEEEEEEEEEEEEEEEEEEEE   DDDDDDDDDDDDD         IIIIIIIIII         TTTTTTTTTTT
       this.update();
     };
 
-    dom.sel("#input-sprite-name").onfocus = () => {
-      this.allow_keyboard_shortcuts = false;
-    };
-
-    dom.sel("#snapshot-console").onfocus = () => {
-      this.allow_keyboard_shortcuts = false;
-    };
-
-    dom.sel("#snapshot-console").onblur = () => {
-      this.allow_keyboard_shortcuts = true;
-    };
-
     dom.sel("#input-sprite-name").onkeyup = (e) => {
       if (e.key === "Enter") {
         this.update_sprite_name();
@@ -1511,6 +1473,7 @@ EEEEEEEEEEEEEEEEEEEEEE   DDDDDDDDDDDDD         IIIIIIIIII         TTTTTTTTTTT
 
     // Shared handler for pointer down (mouse/touch)
     const handlePointerDown = (e: MouseEvent | TouchEvent, shiftKey: boolean) => {
+      this.pointer_down = true;
       const pixelData = this.editor.get_pixel(e);
 
       // In grid mode, switch to the clicked sprite if needed
@@ -1649,6 +1612,10 @@ EEEEEEEEEEEEEEEEEEEEEE   DDDDDDDDDDDDD         IIIIIIIIII         TTTTTTTTTTT
 
     // Shared handler for pointer up (mouse/touch)
     const handlePointerUp = () => {
+      // Only strokes that started in the editor end here
+      if (!this.pointer_down) return;
+      this.pointer_down = false;
+
       // Finalize selection
       if (this.marquee_drawing) {
         this.marquee_drawing = false;
@@ -1698,8 +1665,13 @@ EEEEEEEEEEEEEEEEEEEEEE   DDDDDDDDDDDDD         IIIIIIIIII         TTTTTTTTTTT
       handlePointerUp();
     };
 
+    dom.sel("#editor").ontouchcancel = () => {
+      handlePointerUp();
+    };
+
     // Mouse event handlers
     dom.sel("#editor").onmousedown = (e) => {
+      if (e.button !== 0) return; // left button only
       handlePointerDown(e, e.shiftKey);
     };
 
@@ -1707,9 +1679,10 @@ EEEEEEEEEEEEEEEEEEEEEE   DDDDDDDDDDDDD         IIIIIIIIII         TTTTTTTTTTT
       handlePointerMove(e, e.shiftKey);
     };
 
-    dom.sel("#editor").onclick = () => {
+    // On document, so a release outside the canvas still ends the stroke
+    document.addEventListener("mouseup", () => {
       handlePointerUp();
-    };
+    });
 
     /*
 
@@ -1837,6 +1810,11 @@ LLLLLLLLLLLLLLLLLLLLLLLL   IIIIIIIIII    SSSSSSSSSSSSSSS            TTTTTTTTTTT
       this.dragging = true;
     });
 
+    // Also covers drops outside the list and cancelled drags
+    this.list.setSortEndCallback(() => {
+      this.dragging = false;
+    });
+
     this.list.setSortCallback((sortedIds: string[]) => {
       this.sprite.sort_spritelist(sortedIds);
       this.dragging = false;
@@ -1857,15 +1835,6 @@ LLLLLLLLLLLLLLLLLLLLLLLL   IIIIIIIIII    SSSSSSSSSSSSSSS            TTTTTTTTTTT
           // Invalid filename
           dom.add_class("#menubar-filename-input", "error");
         }
-      };
-
-      // Disable keyboard shortcuts when typing in filename input
-      filenameInput.onfocus = () => {
-        this.allow_keyboard_shortcuts = false;
-      };
-
-      filenameInput.onblur = () => {
-        this.allow_keyboard_shortcuts = true;
       };
     }
   }

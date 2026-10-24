@@ -44,13 +44,11 @@ export default class Snapshot extends Window_Controls {
   viciimem: Uint8Array | null;
   cia2mem: Uint8Array | null;
 
-  event: any;
   app: App | null;
 
-  constructor(public window: number, public config, public eventhandler) {
+  constructor(public window: number, public config) {
     super();
     this.app = (window as any).app;
-    this.event = eventhandler;
     this.config = config;
     this.window = window;
     this.c64mem = null;

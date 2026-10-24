@@ -8,12 +8,10 @@ export default class ExportBase {
   savedata: any;
   app: any;
   config: any;
-  eventhandler: any;
 
-  constructor(app: any, config: any, eventhandler: any) {
+  constructor(app: any, config: any) {
     this.app = app;
     this.config = config;
-    this.eventhandler = eventhandler;
   }
 
   // https://stackoverflow.com/questions/13405129/javascript-create-and-save-file

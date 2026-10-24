@@ -1,4 +1,6 @@
 export default class Sprite {
+  private static readonly MAX_UNDO_STEPS = 100;
+
   width: number;
   height: number;
   all: any = {};
@@ -502,8 +504,11 @@ export default class Sprite {
   }
 
   save_backup(): void {
-    this.backup_position++;
-    this.backup[this.backup_position] = this.deepClone(this.all);
+    // Drop any redo branch, then cap the history
+    this.backup.length = this.backup_position + 1;
+    this.backup.push(this.deepClone(this.all));
+    if (this.backup.length > Sprite.MAX_UNDO_STEPS) this.backup.shift();
+    this.backup_position = this.backup.length - 1;
 
     // Trigger app-wide save
     if (this.app) {

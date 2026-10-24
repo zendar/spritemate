@@ -6,6 +6,7 @@
 export interface SortableConfig {
   onSort?: (oldIndex: number, newIndex: number) => void;
   onSortStart?: () => void;
+  onSortEnd?: () => void;
 }
 
 export class Sortable {
@@ -92,6 +93,11 @@ export class Sortable {
         this.placeholder.remove();
       }
       this.placeholder = null;
+    }
+
+    // Fires whether or not the drop landed in the container
+    if (this.config.onSortEnd) {
+      this.config.onSortEnd();
     }
   }
 

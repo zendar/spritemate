@@ -283,7 +283,7 @@ export default class Settings {
     if (dialogElement) {
       dialogElement.close();
     }
-    this.eventhandler.onLoad(); // calls "regain_keyboard_controls" method in app.js
+    this.eventhandler.onLoad(); // calls "update_config" in App
   }
 
   get_config() {

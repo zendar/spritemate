@@ -4,10 +4,9 @@ import { App } from './App';
 export default class Import {
   app: App | null;
 
-  constructor(public config, public eventhandler) {
+  constructor(public config) {
     this.app = null;
     this.config = config;
-    this.eventhandler = eventhandler;
     this.setup_import_input();
   }
 
@@ -30,7 +29,6 @@ export default class Import {
 
     if (file.name.match(/\.(vsf)$/)) {
       this.app.snapshot.load_snapshot(file, file.name);
-      this.eventhandler.onLoad();
 
       // by removing the input field and reassigning it, reloading the same file will work
       document.querySelector("#input-import")?.remove();

@@ -6,8 +6,8 @@ import JSZip from "jszip";
 export default class Export extends ExportBase {
   window: number;
 
-  constructor(window: number, config: any, eventhandler: any, app: any) {
-    super(app, config, eventhandler);
+  constructor(window: number, config: any, app: any) {
+    super(app, config);
     this.window = window;
 
     const template = `
@@ -56,7 +56,6 @@ export default class Export extends ExportBase {
 
           closeButton.addEventListener("click", () => {
             dialogElement.close();
-            this.eventhandler.onLoad();
           });
         }
       }
@@ -214,7 +213,6 @@ export default class Export extends ExportBase {
     const dialogElement = document.querySelector(`#dialog-window-${this.window}`) as HTMLDialogElement;
     if (dialogElement && dialogElement.open) {
       dialogElement.close();
-      this.eventhandler.onLoad();
     }
   }
 }

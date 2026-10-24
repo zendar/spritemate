@@ -1041,6 +1041,9 @@ dialog.spritemate-dialog[open] {
 
 #menubar {
   background-color: #333;
+  /* own stacking context above the windows so dropdowns are never covered */
+  position: relative;
+  z-index: 500;
 }
 
 #menubar ul {

@@ -11,6 +11,7 @@ export default class List extends Window_Controls {
   private sortable: Sortable | null = null;
   private onSortCallback: ((sortedArray: string[]) => void) | null = null;
   private onSortStartCallback: (() => void) | null = null;
+  private onSortEndCallback: (() => void) | null = null;
 
   constructor(public window: number, public config) {
     super();
@@ -70,6 +71,11 @@ export default class List extends Window_Controls {
             this.onSortCallback(sortedIds);
           }
         },
+        onSortEnd: () => {
+          if (this.onSortEndCallback) {
+            this.onSortEndCallback();
+          }
+        },
       });
     }
 
@@ -91,6 +97,10 @@ export default class List extends Window_Controls {
 
   setSortStartCallback(callback: () => void) {
     this.onSortStartCallback = callback;
+  }
+
+  setSortEndCallback(callback: () => void) {
+    this.onSortEndCallback = callback;
   }
 
   toggle_grid() {

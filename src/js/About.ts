@@ -1,10 +1,9 @@
 
 import { dom } from "./helper";
 export default class About {
-  constructor(public window: number, public config, public eventhandler) {
+  constructor(public window: number, public config) {
     this.config = config;
     this.window = window;
-    this.eventhandler = eventhandler;
 
     const template = `
     <div id="info">
@@ -193,7 +192,6 @@ export default class About {
 
           closeButton.addEventListener("click", () => {
             dialogElement.close();
-            this.eventhandler.onLoad();
           });
         }
       }
@@ -204,7 +202,6 @@ export default class About {
       if (dialogElement) {
         dialogElement.close();
       }
-      this.eventhandler.onLoad(); // calls "regain_keyboard_controls" method in app.js
     };
 
     // Prevent auto-scroll to first link by focusing the fieldset
