@@ -16,6 +16,7 @@ import Palette from "./Palette";
 import Preview from "./Preview";
 import Animation from "./Animation";
 import Playfield from "./Playfield";
+import Layers from "./Layers";
 import Sprite from "./Sprite";
 import Storage from "./Storage";
 import Window from "./Window";
@@ -43,6 +44,8 @@ export class App {
   animation: any;
   window_playfield: any;
   playfield: any;
+  window_layers: any;
+  layers: any;
   window_list: any;
   window_snapshot: any;
   list!: List;
@@ -122,6 +125,7 @@ export class App {
     ensureWindowDefaults(this.config.window_snapshot, { autoOpen: false, closeable: true, isOpen: false });
     ensureWindowDefaults(this.config.window_animation, { autoOpen: false, closeable: true, isOpen: false });
     ensureWindowDefaults(this.config.window_playfield, { autoOpen: false, closeable: true, isOpen: false });
+    ensureWindowDefaults(this.config.window_layers, { autoOpen: false, closeable: true, isOpen: false });
 
     this.sprite = new Sprite(this.config, this);
   }
@@ -282,6 +286,21 @@ export class App {
     this.window_playfield = new Window(playfield_config, this.store_window.bind(this));
     this.playfield = new Playfield(playfield_config.window_id, this.config, this);
 
+    // layers
+    const layers_config = {
+      name: "window_layers",
+      title: "Layers",
+      type: "layers",
+      autoOpen: false,
+      closeable: this.config.window_layers.closeable,
+      resizable: false,
+      left: this.config.window_layers.left,
+      top: this.config.window_layers.top,
+      window_id: 13,
+    };
+    this.window_layers = new Window(layers_config, this.store_window.bind(this));
+    this.layers = new Layers(layers_config.window_id, this.config, this);
+
     this.load = new Load(this.config, {
       onLoad: this.update_loaded_file.bind(this),
     });
@@ -348,6 +367,9 @@ export class App {
     if (this.config.window_playfield.closeable && this.config.window_playfield.isOpen) {
       this.window_playfield.open();
     }
+    if (this.config.window_layers.closeable && this.config.window_layers.isOpen) {
+      this.window_layers.open();
+    }
 
     if (this.storage.is_updated_version())
       this.window_about.open();
@@ -371,6 +393,7 @@ export class App {
       // Collect all state in one place
       const state = this.sprite.get_all();
       state.playfield = this.playfield.getPlayfieldState();
+      state.layers = this.layers.getState();
 
       // Single save call
       this.storage.write_sprites(state);
@@ -727,7 +750,7 @@ export class App {
   }
 
   // Helper method to handle zoom and grid controls for editor, preview, and list
-  handleZoomGrid(component: "editor" | "preview" | "list" | "playfield", action: "zoom-in" | "zoom-out" | "toggle-grid"): void {
+  handleZoomGrid(component: "editor" | "preview" | "list" | "playfield" | "layers", action: "zoom-in" | "zoom-out" | "toggle-grid"): void {
     const comp = this[component];
 
     if (action === "zoom-in") {
@@ -745,6 +768,9 @@ export class App {
         this.storage.write(this.config);
       } else if (component === "playfield") {
         this.config.window_playfield.grid = comp.get_grid();
+        this.storage.write(this.config);
+      } else if (component === "layers") {
+        this.config.window_layers.grid = comp.get_grid();
         this.storage.write(this.config);
       }
     }
@@ -774,6 +800,7 @@ export class App {
     this.palette.update(all);
     this.snapshot.update(all);
     this.playfield.update(all);
+    this.layers.update(all);
     this.update_ui();
   }
 
@@ -785,6 +812,7 @@ export class App {
     IconStateManager.toggleFade("#icon-redo", this.sprite.can_redo());
     IconStateManager.toggleFade("#playfield-clear-all", this.playfield.hasSpriteSelected());
     IconStateManager.toggleFade("#icon-animation-delete", this.sprite.has_animation());
+    IconStateManager.toggleFade("#icon-layers-clear", this.layers.hasCellSelected());
 
     // Icon image swaps (highlighted when condition is true)
     IconStateManager.toggleImage("#icon-preview-overlay", this.sprite.is_overlay(), "ui/icon-preview-overlay");
@@ -800,6 +828,8 @@ export class App {
     IconStateManager.toggleFadeInverted("#icon-list-zoom-in", this.list.is_max_zoom());
     IconStateManager.toggleFadeInverted("#icon-playfield-zoom-out", this.playfield.is_min_zoom());
     IconStateManager.toggleFadeInverted("#icon-playfield-zoom-in", this.playfield.is_max_zoom());
+    IconStateManager.toggleFadeInverted("#icon-layers-zoom-out", this.layers.is_min_zoom());
+    IconStateManager.toggleFadeInverted("#icon-layers-zoom-in", this.layers.is_max_zoom());
     IconStateManager.toggleFadeInverted("#icon-animation-zoom-out", this.animation.is_min_zoom());
     IconStateManager.toggleFadeInverted("#icon-animation-zoom-in", this.animation.is_max_zoom());
 
@@ -819,7 +849,8 @@ export class App {
     const windows = [
       { selector: "#menubar-animation .checkmark", window: this.window_animation },
       { selector: "#menubar-playfield .checkmark", window: this.window_playfield },
-      { selector: "#menubar-monitor .checkmark", window: this.window_snapshot }
+      { selector: "#menubar-monitor .checkmark", window: this.window_snapshot },
+      { selector: "#menubar-layers .checkmark", window: this.window_layers }
     ];
 
     windows.forEach(({ selector, window }) => {
@@ -857,6 +888,7 @@ export class App {
   private syncPlayfieldToSpriteData(): void {
     const all = this.sprite.get_all();
     all.playfield = this.playfield.getPlayfieldState();
+    all.layers = this.layers.getState();
   }
 
   // Restore playfield state from sprite data
@@ -865,6 +897,7 @@ export class App {
     if (all.playfield) {
       this.playfield.setPlayfieldState(all.playfield);
     }
+    this.layers.setState(all.layers);
   }
 
   update_loaded_file() {
@@ -1097,6 +1130,7 @@ MMMMMMMM               MMMMMMMMEEEEEEEEEEEEEEEEEEEEEENNNNNNNN         NNNNNNN   
 
         this.list.update_all(this.sprite.get_all());
         this.update();
+        this.syncSpriteDataToPlayfield(); // reset playfield and layers too
         this.window_confirm.close();
         status("New file created.");
       };
@@ -1137,6 +1171,17 @@ MMMMMMMM               MMMMMMMMEEEEEEEEEEEEEEEEEEEEEENNNNNNNN         NNNNNNN   
       } else {
         this.window_snapshot.open();
         this.config.window_snapshot.isOpen = true;
+      }
+      this.storage.write(this.config);
+    };
+
+    dom.sel("#menubar-layers").onclick = () => {
+      if (this.window_layers.isOpen()) {
+        this.window_layers.close();
+        this.config.window_layers.isOpen = false;
+      } else {
+        this.window_layers.open();
+        this.config.window_layers.isOpen = true;
       }
       this.storage.write(this.config);
     };
@@ -1788,6 +1833,13 @@ LLLLLLLLLLLLLLLLLLLLLLLL   IIIIIIIIII    SSSSSSSSSSSSSSS            TTTTTTTTTTT
     dom.sel("#icon-playfield-scanlines").onclick = () => {
       this.playfield.toggle_scanlines();
     };
+
+    // Layers window controls
+    dom.sel("#icon-layers-zoom-in").onclick = () => this.handleZoomGrid("layers", "zoom-in");
+    dom.sel("#icon-layers-zoom-out").onclick = () => this.handleZoomGrid("layers", "zoom-out");
+    dom.sel("#icon-layers-grid").onclick = () => this.handleZoomGrid("layers", "toggle-grid");
+    dom.sel("#icon-layers-clear").onclick = () => this.layers.clearSelectedCell();
+    dom.sel("#icon-layers-clear-all").onclick = () => this.layers.clearAll();
 
     dom.sel("#spritelist").onclick = () => {
       if (!this.dragging) {

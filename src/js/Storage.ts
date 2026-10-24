@@ -79,7 +79,8 @@ export default class Storage {
 
         // Preserve window positions/sizes from storage
         const windowKeys = ['window_tools', 'window_editor', 'window_preview', 'window_list',
-                            'window_palette', 'window_snapshot', 'window_animation', 'window_playfield'];
+                            'window_palette', 'window_snapshot', 'window_animation', 'window_playfield',
+                            'window_layers'];
         windowKeys.forEach(key => {
           if (this.storage[key]) {
             this.config[key] = { ...this.config[key], ...this.storage[key] };

@@ -18,6 +18,7 @@ export function get_config() {
       preview: { min: 4, max: 16 },
       list: { min: 4, max: 16 },
       animation: { min: 4, max: 16 },
+      layers: { min: 4, max: 16 },
     },
     color_names:["black", "white", "red", "cyan", "purple","green","blue","yellow","orange","brown","pink","dark grey","grey","light green","light blue","light grey"],
     palettes: {
@@ -170,6 +171,15 @@ export function get_config() {
       left: 800,
       zoom: 1,
       grid: false,
+      autoOpen: false,
+      closeable: true,
+      isOpen: false,
+    },
+    window_layers: {
+      top: 280,
+      left: 1160,
+      zoom: 6,
+      grid: true,
       autoOpen: false,
       closeable: true,
       isOpen: false,

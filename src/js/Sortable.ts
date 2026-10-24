@@ -65,6 +65,7 @@ export class Sortable {
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/html", target.innerHTML);
+      e.dataTransfer.setData("text/plain", target.id); // lets other windows accept the item
     }
 
     // Add dragging class

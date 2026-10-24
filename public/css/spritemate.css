@@ -1701,3 +1701,47 @@ dialog.spritemate-dialog[open] {
 /* ============================================================================
    END OF STYLESHEET
    ============================================================================ */
+
+
+/* ============================================================================
+   20. LAYERS WINDOW
+   ============================================================================ */
+
+#layers {
+  display: block;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border: 1px solid #333;
+}
+
+#layers-canvas-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10px;
+  overflow: auto;
+}
+
+.layers-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  margin-right: 12px;
+}
+
+.layers-toggles input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--blue);
+  width: 16px;
+  height: 16px;
+}
+
+.layers-hint {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 0;
+}

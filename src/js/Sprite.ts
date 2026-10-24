@@ -42,10 +42,17 @@ export default class Sprite {
       sprites: []
     };
 
+    this.all.layers = this.defaultLayers();
+
     this.backup = [];
     this.backup_position = -1;
     this.copy_sprite = {};
     this.sprite_name_counter = 0;
+  }
+
+  // Helper: Empty state for the Layers window
+  private defaultLayers() {
+    return { width: 1, height: 1, show1: true, show2: true, cells: [{ l1: null, l2: null }] };
   }
 
   // Helper: Create pixel grid with given fill value
@@ -382,6 +389,10 @@ export default class Sprite {
         doubleX: false,
         doubleY: false
       };
+    }
+    // Ensure layers settings exist (for backward compatibility with old save files)
+    if (!this.all.layers) {
+      this.all.layers = this.defaultLayers();
     }
     // Ensure playfield settings exist (for backward compatibility with old save files)
     if (!this.all.playfield) {
